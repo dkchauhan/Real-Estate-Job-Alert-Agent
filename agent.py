@@ -17,7 +17,7 @@ import feedparser
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import google.generativeai as genai  # Add this
+from anthropic import Anthropic
 from config import CONFIG
 
 # ── Logging ──────────────────────────────────────────────────────────────────
@@ -31,9 +31,8 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-# ── Gemini client ──────────────────────────────────────────────────────────
-genai.configure(api_key=CONFIG["gemini_api_key"])
-model = genai.GenerativeModel('models/gemini-1.5-flash')
+# ── Anthropic client ──────────────────────────────────────────────────────────
+claude = Anthropic(api_key=CONFIG["anthropic_api_key"])
 
 # ── Database (tracks already-seen jobs so we never double-notify) ─────────────
 DB_PATH = "seen_jobs.db"
@@ -164,35 +163,33 @@ Mark relevant=true only when the job clearly involves:
 
 Score 8-10 = perfect match, 5-7 = likely match, 1-4 = tangential, 0 = unrelated."""
 
-def ai_filter(job):
-    """Uses Gemini 1.5 Flash to score job relevance."""
-    prompt = f"""
-    You are a job filter. Score this job from 0-10 based on relevance to these keywords: {', '.join(CONFIG['keywords'])}.
-    Respond ONLY in raw JSON format like this: {{"score": 8, "reason": "explanation"}}
-    
-    Job Title: {job['title']}
-    Description: {job['description'][:500]}
-    """
-    try:
-        # Use the generate_content method
-        response = model.generate_content(prompt)
-        
-        # Gemini sometimes wraps JSON in markdown blocks (```json ... ```)
-        res_text = response.text.strip()
-        if "```json" in res_text:
-            res_text = res_text.split("```json")[1].split("```")[0].strip()
-        elif "```" in res_text:
-            res_text = res_text.split("```")[1].split("```")[0].strip()
 
-        data = json.loads(res_text)
-        
-        if data.get('score', 0) >= CONFIG['min_score']:
-            job['ai_score'] = data.get('score', 0)
-            job['ai_reason'] = data.get('reason', "No reason provided")
+def ai_filter(job: dict) -> dict | None:
+    """
+    Ask Claude to score the job. Returns the job dict enriched with
+    ai_score and ai_reason, or None if irrelevant.
+    """
+    prompt = f"Title: {job['title']}\n\nDescription:\n{job['description'][:1500]}"
+    try:
+        response = claude.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=200,
+            system=SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        raw = response.content[0].text.strip()
+        # Strip possible markdown fences
+        if raw.startswith("```"):
+            raw = raw.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+        data = json.loads(raw)
+        if data.get("relevant") and data.get("score", 0) >= CONFIG.get("min_score", 5):
+            job["ai_score"] = data["score"]
+            job["ai_reason"] = data.get("reason", "")
             return job
-    except Exception as e:
-        log.warning(f"Gemini error: {e}")
+    except Exception as exc:
+        log.warning("AI filter error for '%s': %s", job["title"], exc)
     return None
+
 
 # ── Notifications ─────────────────────────────────────────────────────────────
 
