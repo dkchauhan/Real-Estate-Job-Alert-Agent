@@ -6,8 +6,9 @@ All sensitive values can also be set as environment variables (recommended).
 import os
 
 CONFIG = {
-   # ── Gemini ─────────────────────────────────────────────────────────────
-    "gemini_api_key": os.getenv("GEMINI_API_KEY", "YOUR_GEMINI_KEY_HERE"),
+    # ── Anthropic ─────────────────────────────────────────────────────────────
+    # Get your key at https://console.anthropic.com/
+    "anthropic_api_key": os.getenv("ANTHROPIC_API_KEY", "sk-ant-YOUR_KEY_HERE"),
 
     # ── Job search settings ───────────────────────────────────────────────────
     "keywords": [
