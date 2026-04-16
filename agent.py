@@ -17,7 +17,7 @@ import feedparser
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from anthropic import Anthropic
+import google.generativeai as genai  # Add this
 from config import CONFIG
 
 # ── Logging ──────────────────────────────────────────────────────────────────
