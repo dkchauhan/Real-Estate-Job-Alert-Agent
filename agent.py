@@ -33,7 +33,7 @@ log = logging.getLogger(__name__)
 
 # ── Gemini client ──────────────────────────────────────────────────────────
 genai.configure(api_key=CONFIG["gemini_api_key"])
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('models/gemini-1.5-flash')
 
 # ── Database (tracks already-seen jobs so we never double-notify) ─────────────
 DB_PATH = "seen_jobs.db"
@@ -168,15 +168,22 @@ def ai_filter(job):
     """Uses Gemini 1.5 Flash to score job relevance."""
     prompt = f"""
     You are a job filter. Score this job from 0-10 based on relevance to these keywords: {', '.join(CONFIG['keywords'])}.
-    Respond ONLY in JSON format: {{"score": 8, "reason": "short explanation"}}
+    Respond ONLY in raw JSON format like this: {{"score": 8, "reason": "explanation"}}
     
     Job Title: {job['title']}
     Description: {job['description'][:500]}
     """
     try:
+        # Use the generate_content method
         response = model.generate_content(prompt)
-        # Clean the response text to ensure it's valid JSON
-        res_text = response.text.replace('```json', '').replace('```', '').strip()
+        
+        # Gemini sometimes wraps JSON in markdown blocks (```json ... ```)
+        res_text = response.text.strip()
+        if "```json" in res_text:
+            res_text = res_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in res_text:
+            res_text = res_text.split("```")[1].split("```")[0].strip()
+
         data = json.loads(res_text)
         
         if data.get('score', 0) >= CONFIG['min_score']:
@@ -186,7 +193,6 @@ def ai_filter(job):
     except Exception as e:
         log.warning(f"Gemini error: {e}")
     return None
-
 
 # ── Notifications ─────────────────────────────────────────────────────────────
 
