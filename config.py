@@ -25,7 +25,7 @@ CONFIG = {
     "platforms": ["upwork", "fiverr", "freelancer"],
 
     # How often to check (minutes)
-    "interval_minutes": 60,
+    "interval_minutes": 120,
 
     # Minimum AI relevance score (0-10) to trigger a notification
     # 5 = moderate match, 7 = strict, 8+ = only very close matches
