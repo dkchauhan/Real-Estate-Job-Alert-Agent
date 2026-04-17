@@ -17,12 +17,14 @@ CONFIG = {
         "Showcase IDX",
         "IDX integration",
         "MLS integration",
-        "real estate WordPress",
+        "real estate website",
+        "ihomefinder",
+        "idxbroker"
     ],
 
     # Platforms to monitor: "upwork", "fiverr", "freelancer"
     # Note: Fiverr has no public RSS — the agent logs a note for it.
-    "platforms": ["upwork", "fiverr", "freelancer"],
+    "platforms": ["upwork", "fiverr"],
 
     # How often to check (minutes)
     "interval_minutes": 120,
@@ -47,7 +49,7 @@ CONFIG = {
     # 1. Message @BotFather on Telegram → /newbot → copy the token
     # 2. Message @userinfobot to get your chat_id (or use @getidsbot)
     "telegram": {
-        "bot_token": os.getenv("TELEGRAM_BOT_TOKEN", "123456789:ABCdef_your_bot_token"),
-        "chat_id":   os.getenv("TELEGRAM_CHAT_ID",   "your_chat_id_here"),
+        "bot_token": os.getenv("TELEGRAM_BOT_TOKEN", "8639789332:AAHcu7BaLmIKMuXYnPF4X6HXdtluOX9cCbA"),
+        "chat_id":   os.getenv("TELEGRAM_CHAT_ID",   "7468181176"),
     },
 }
